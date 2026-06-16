@@ -1,0 +1,19 @@
+# ============================================================
+# CONFIGMAP — frontend
+# Stores non-sensitive configuration as key-value pairs.
+# The app reads these as environment variables at startup.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: lab
+data:
+  # The URL the frontend uses to call the API service
+  API_URL: "http://api-svc:8080"
+  # Application environment label
+  APP_ENV: "production"
+  # Port the frontend app listens on
+  PORT: "3000"
+  # App name shown in the hello world page
+  APP_NAME: "Lab Frontend"

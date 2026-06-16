@@ -1,0 +1,80 @@
+# ============================================================
+# DEPLOYMENT — scraper
+# Simulates a data scraper that runs continuously.
+# Every 30 seconds it generates a new dummy JSON data file
+# and saves it to the EBS volume.
+#
+# Image: busybox
+# What it does: writes fresh dummy data every 30 seconds
+#               serves the latest data via HTTP on port 9090
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scraper
+  namespace: lab
+  labels:
+    app: scraper
+    tier: scraper
+spec:
+  replicas: 1              # EBS = only 1 replica
+  selector:
+    matchLabels:
+      app: scraper
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: scraper
+        tier: scraper
+    spec:
+      serviceAccountName: scraper-sa
+      containers:
+        - name: scraper
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /scraped-data
+              echo "Scraper started. Writing dummy data every 30s..."
+              # Background loop: generates fresh data every 30 seconds
+              while true; do
+                TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+                RANDOM_ID=$((RANDOM % 1000))
+                echo "{\"scraped_at\":\"${TIMESTAMP}\",\"source\":\"dummy-source\",\"items\":[{\"id\":${RANDOM_ID},\"title\":\"Item ${RANDOM_ID}\",\"value\":${RANDOM_ID}}]}" > /scraped-data/latest.json
+                echo "Data written at ${TIMESTAMP}"
+                sleep 30
+              done &
+              # Foreground: serve the latest data via HTTP on port 9090
+              while true; do
+                response=$(cat /scraped-data/latest.json 2>/dev/null || echo '{"status":"starting"}')
+                printf "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n${response}" | nc -l -p 9090 -q 1
+              done
+          ports:
+            - containerPort: 9090
+              name: http
+          envFrom:
+            - configMapRef:
+                name: scraper-config
+          env:
+            - name: SCRAPER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: scraper-secret
+                  key: SCRAPER_TOKEN
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: scraped-data
+              mountPath: /scraped-data
+      volumes:
+        - name: scraped-data
+          persistentVolumeClaim:
+            claimName: scraper-data-pvc

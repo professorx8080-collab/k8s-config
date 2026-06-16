@@ -1,0 +1,29 @@
+# ============================================================
+# LIMIT RANGE
+# Sets default CPU and memory for each individual container.
+# If a container does not specify its own limits, these
+# default values are applied automatically.
+# ============================================================
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: lab-limit-range
+  namespace: lab
+spec:
+  limits:
+    - type: Container
+      # Default values applied if container does not specify
+      default:
+        cpu: 200m        # 0.2 CPU cores
+        memory: 256Mi
+      defaultRequest:
+        cpu: 100m        # 0.1 CPU cores
+        memory: 128Mi
+      # Maximum a single container is allowed to request
+      max:
+        cpu: "1"
+        memory: 1Gi
+      # Minimum a single container must request
+      min:
+        cpu: 50m
+        memory: 64Mi

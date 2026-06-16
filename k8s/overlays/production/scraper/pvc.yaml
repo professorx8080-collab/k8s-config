@@ -1,0 +1,19 @@
+# ============================================================
+# PERSISTENT VOLUME CLAIM — scraper
+# Stores the scraped data files so they survive pod restarts.
+# The scraper writes here, the backend reads from here.
+# ============================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: scraper-data-pvc
+  namespace: lab
+  labels:
+    app: scraper
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ebs-gp3
+  resources:
+    requests:
+      storage: 2Gi

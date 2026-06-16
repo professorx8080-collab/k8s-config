@@ -1,0 +1,23 @@
+# ============================================================
+# PERSISTENT VOLUME CLAIM — backend
+# Requests an EBS gp3 volume to store data files.
+# This simulates what a real backend would use for a database
+# or file storage. The data persists even if the pod restarts.
+#
+# NOTE: EBS volumes can only be attached to ONE pod at a time.
+# That is why backend only has 1 replica (not 2).
+# ============================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: backend-data-pvc
+  namespace: lab
+  labels:
+    app: backend
+spec:
+  accessModes:
+    - ReadWriteOnce           # only one pod can mount this at a time
+  storageClassName: ebs-gp3
+  resources:
+    requests:
+      storage: 1Gi            # 1GB of EBS storage

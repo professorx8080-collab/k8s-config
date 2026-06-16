@@ -1,0 +1,12 @@
+# ============================================================
+# NAMESPACE
+# Creates an isolated space called "lab" for all our services.
+# Think of it like a folder that groups all our apps together.
+# ============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lab
+  labels:
+    name: lab
+    env: production

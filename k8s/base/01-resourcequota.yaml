@@ -1,0 +1,23 @@
+# ============================================================
+# RESOURCE QUOTA
+# Sets a hard limit on how much CPU and memory the entire
+# "lab" namespace can use across ALL pods combined.
+# This prevents one app from consuming all cluster resources.
+# ============================================================
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: lab-resource-quota
+  namespace: lab
+spec:
+  hard:
+    # Max number of pods allowed in this namespace
+    pods: "20"
+    # Total CPU requests across all pods
+    requests.cpu: "4"
+    # Total memory requests across all pods
+    requests.memory: 4Gi
+    # Total CPU limits across all pods
+    limits.cpu: "8"
+    # Total memory limits across all pods
+    limits.memory: 8Gi

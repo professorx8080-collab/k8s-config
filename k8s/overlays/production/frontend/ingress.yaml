@@ -1,0 +1,32 @@
+# ============================================================
+# INGRESS — frontend
+# The entry point from the internet into the cluster.
+# Routes external HTTP traffic to the frontend service.
+# In a real setup you would add your domain and TLS cert here.
+# For the lab we use a path-based rule.
+# ============================================================
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend-ingress
+  namespace: lab
+  annotations:
+    # Use the AWS Load Balancer Controller
+    kubernetes.io/ingress.class: "alb"
+    # Create an internet-facing load balancer
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    # Forward traffic at the IP level (needed for EKS)
+    alb.ingress.kubernetes.io/target-type: "ip"
+    # HTTP only for lab (add certificate-arn for HTTPS)
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-svc
+                port:
+                  number: 80

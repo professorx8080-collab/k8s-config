@@ -1,0 +1,18 @@
+# ============================================================
+# CONFIGMAP — backend
+# The backend handles business logic between api and scraper.
+# It reads dummy data from a mounted file on its EBS volume.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: lab
+data:
+  PORT: "8080"
+  APP_ENV: "production"
+  APP_NAME: "Lab Backend"
+  # Where the backend stores its data file on the EBS volume
+  DATA_DIR: "/data"
+  # Scraper service URL for fetching fresh data
+  SCRAPER_URL: "http://scraper-svc:9090"

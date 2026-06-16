@@ -1,0 +1,33 @@
+# ============================================================
+# ROOT PRODUCTION KUSTOMIZATION
+# This is the TOP-LEVEL file that deploys EVERYTHING at once.
+#
+# ArgoCD points to this file.
+# To deploy all services manually:
+#   kubectl apply -k overlays/production/
+#
+# This includes:
+#   - All base cluster resources (namespace, quotas, etc)
+#   - All four services (frontend, api, backend, scraper)
+# ============================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Pull in the base cluster-level resources first
+resources:
+  - ../../base
+  - frontend/
+  - api/
+  - backend/
+  - scraper/
+
+# Apply common labels to EVERYTHING deployed by this overlay
+commonLabels:
+  environment: production
+  managed-by: argocd
+  cluster: kaniko4
+
+# Apply common annotations to EVERYTHING
+commonAnnotations:
+  team: "nexustry-platform"
+  repo: "github.com/nexustry/k8s-config"

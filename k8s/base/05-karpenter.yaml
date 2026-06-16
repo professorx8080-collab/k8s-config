@@ -1,0 +1,57 @@
+# ============================================================
+# KARPENTER NODE POOL
+# Karpenter is an auto-scaler for EKS nodes.
+# When pods cannot be scheduled (not enough nodes),
+# Karpenter automatically provisions new EC2 instances.
+# For this lab with 2 nodes, Karpenter adds more if needed.
+# ============================================================
+apiVersion: karpenter.sh/v1beta1
+kind: NodePool
+metadata:
+  name: lab-nodepool
+spec:
+  template:
+    metadata:
+      labels:
+        nodepool: lab
+    spec:
+      nodeClassRef:
+        name: lab-node-class
+      requirements:
+        # Use spot instances to save cost (good for lab/dev)
+        - key: karpenter.sh/capacity-type
+          operator: In
+          values: ["spot", "on-demand"]
+        # Allow t3 and t3a instance families
+        - key: node.kubernetes.io/instance-type
+          operator: In
+          values: ["t3.medium", "t3.large", "t3a.medium", "t3a.large"]
+        # Use the same region as your EKS cluster
+        - key: topology.kubernetes.io/zone
+          operator: In
+          values: ["ap-southeast-1a", "ap-southeast-1b"]
+  # Maximum number of nodes Karpenter can create
+  limits:
+    cpu: "16"
+    memory: 32Gi
+  # How long to wait before removing an idle node
+  disruption:
+    consolidationPolicy: WhenUnderutilized
+    expireAfter: 720h   # 30 days
+---
+# EC2NodeClass defines what kind of EC2 instance to launch
+apiVersion: karpenter.k8s.aws/v1beta1
+kind: EC2NodeClass
+metadata:
+  name: lab-node-class
+spec:
+  # Use the same AMI family as your EKS cluster
+  amiFamily: AL2
+  # Replace with your actual EKS node role ARN
+  role: "KarpenterNodeRole-kaniko4"
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "kaniko4"
+  securityGroupSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: "kaniko4"

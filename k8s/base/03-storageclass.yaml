@@ -1,0 +1,20 @@
+# ============================================================
+# STORAGE CLASS
+# Defines the type of storage available in the cluster.
+# ebs-gp3 = AWS EBS (fast SSD, good for databases/data)
+# For this lab we define it but scraper is the only service
+# that uses persistent storage.
+# ============================================================
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Delete
+allowVolumeExpansion: true

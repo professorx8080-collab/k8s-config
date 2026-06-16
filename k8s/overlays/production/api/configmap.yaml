@@ -1,0 +1,21 @@
+# ============================================================
+# CONFIGMAP — api
+# The API service is the main backend that returns JSON data.
+# It serves dummy data so no real database is needed.
+# frontend calls this service to get data to display.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+  namespace: lab
+data:
+  PORT: "8080"
+  APP_ENV: "production"
+  APP_NAME: "Lab API"
+  # URL to call the scraper service for fresh data
+  SCRAPER_URL: "http://scraper-svc:9090"
+  # How many items to return per page
+  PAGE_SIZE: "10"
+  # Enable dummy data mode (no real DB needed)
+  USE_DUMMY_DATA: "true"

@@ -1,0 +1,22 @@
+# ============================================================
+# SERVICE — frontend
+# Exposes the frontend pods inside the cluster.
+# Type ClusterIP means only accessible within the cluster.
+# The Ingress (below) is what exposes it to the internet.
+# ============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-svc
+  namespace: lab
+  labels:
+    app: frontend
+spec:
+  selector:
+    app: frontend             # routes to pods with label app=frontend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80                # service port (what other pods call)
+      targetPort: 8080        # container port (what nginx listens on)
+  type: ClusterIP

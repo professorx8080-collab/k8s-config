@@ -1,0 +1,19 @@
+# ============================================================
+# CONFIGMAP — scraper
+# The scraper simulates fetching data from external sources.
+# In a real project this would call external APIs or websites.
+# For the lab it generates random dummy data every 30 seconds.
+# ============================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scraper-config
+  namespace: lab
+data:
+  PORT: "9090"
+  APP_ENV: "production"
+  APP_NAME: "Lab Scraper"
+  # How often (seconds) the scraper generates new data
+  SCRAPE_INTERVAL: "30"
+  # Where to store scraped data on the EBS volume
+  DATA_DIR: "/scraped-data"

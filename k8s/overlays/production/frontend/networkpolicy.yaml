@@ -1,0 +1,45 @@
+# ============================================================
+# NETWORK POLICY — frontend
+# Rule 1: Allow ingress controller to reach frontend (port 8080)
+# Rule 2: Allow frontend to call api-svc (port 8080)
+# Everything else is blocked by the default-deny-all policy.
+# ============================================================
+# Allow inbound traffic from ALB ingress controller
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-allow-ingress
+  namespace: lab
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 8080
+---
+# Allow frontend to call API service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-allow-api-egress
+  namespace: lab
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: api
+      ports:
+        - port: 8080

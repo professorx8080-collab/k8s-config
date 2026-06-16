@@ -1,0 +1,84 @@
+# ============================================================
+# DEPLOYMENT — backend
+# The backend service processes data and serves it to the API.
+# Uses busybox to simulate a backend that reads/writes files.
+# It writes a dummy JSON file to the EBS volume at startup,
+# then serves it via a simple HTTP server.
+#
+# Image: busybox
+# What it does: writes a data file and serves it on port 8080
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: lab
+  labels:
+    app: backend
+    tier: backend
+spec:
+  replicas: 1              # EBS volume = only 1 replica (ReadWriteOnce)
+  selector:
+    matchLabels:
+      app: backend
+  strategy:
+    type: Recreate         # must stop old pod before starting new (EBS constraint)
+  template:
+    metadata:
+      labels:
+        app: backend
+        tier: backend
+    spec:
+      serviceAccountName: backend-sa
+      initContainers:
+        # Init container runs ONCE at startup to write dummy data
+        - name: init-data
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo '{"status":"ok","service":"backend","records":[{"id":1,"value":"Record A"},{"id":2,"value":"Record B"},{"id":3,"value":"Record C"}]}' > /data/data.json
+              echo "Dummy data written to /data/data.json"
+          volumeMounts:
+            - name: backend-data
+              mountPath: /data
+      containers:
+        - name: backend
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Backend started. Serving data from /data/data.json"
+              while true; do
+                # Simple HTTP server using netcat (nc) — built into busybox
+                response=$(cat /data/data.json)
+                printf "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n${response}" | nc -l -p 8080 -q 1
+              done
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: backend-config
+          env:
+            - name: BACKEND_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secret
+                  key: BACKEND_SECRET
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 300m
+              memory: 128Mi
+          volumeMounts:
+            - name: backend-data
+              mountPath: /data
+      volumes:
+        - name: backend-data
+          persistentVolumeClaim:
+            claimName: backend-data-pvc

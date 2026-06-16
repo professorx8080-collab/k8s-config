@@ -1,0 +1,39 @@
+# ============================================================
+# HPA — Horizontal Pod Autoscaler
+# Automatically scales the number of frontend pods based on
+# CPU usage. If CPU goes above 70%, more pods are added.
+#
+# PDB — Pod Disruption Budget
+# Ensures at least 1 frontend pod is always running during
+# maintenance (node upgrades, drains, etc).
+# ============================================================
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: lab
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 2               # always run at least 2 pods
+  maxReplicas: 5               # never exceed 5 pods
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-pdb
+  namespace: lab
+spec:
+  minAvailable: 1              # always keep 1 pod running
+  selector:
+    matchLabels:
+      app: frontend

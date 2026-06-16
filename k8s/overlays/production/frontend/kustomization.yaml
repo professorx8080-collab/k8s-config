@@ -1,0 +1,25 @@
+# ============================================================
+# KUSTOMIZATION — frontend
+# Lists all files that belong to the frontend service.
+# Kustomize reads this file to know what to deploy.
+# ============================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - serviceaccount.yaml
+  - rbac.yaml
+  - configmap.yaml
+  - secret.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
+  - hpa-pdb.yaml
+
+# Image tag is updated automatically by TeamCity after each build
+# ArgoCD detects this change and deploys the new version
+images:
+  - name: nginx
+    newName: nginx
+    newTag: alpine     # TeamCity will update this line e.g. 1.0.0-abc1234

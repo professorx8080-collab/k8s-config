@@ -1,0 +1,103 @@
+# ============================================================
+# DEPLOYMENT — frontend
+# Tells Kubernetes how to run the frontend app.
+# Uses nginx:alpine as a simple hello-world web server.
+# In real life this would be your Next.js Docker image.
+#
+# Image: nginx:alpine
+# What it does: serves a simple HTML page on port 80
+# ============================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: lab
+  labels:
+    app: frontend
+    tier: frontend
+spec:
+  replicas: 2                    # run 2 copies for high availability
+  selector:
+    matchLabels:
+      app: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                # start 1 new pod before stopping old
+      maxUnavailable: 0          # never have 0 running pods (zero downtime)
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: frontend
+    spec:
+      serviceAccountName: frontend-sa
+      # Security: run as non-root user
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101           # nginx user
+        fsGroup: 101
+      containers:
+        - name: frontend
+          image: nginx:alpine    # simple hello world web server
+          ports:
+            - containerPort: 8080
+              name: http
+          # Load environment variables from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: frontend-config
+          env:
+            # Load sensitive value from Secret individually
+            - name: APP_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: frontend-secret
+                  key: APP_SECRET_KEY
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          # Readiness probe: only send traffic when this passes
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          # Liveness probe: restart pod if this fails 3 times
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+          # Override nginx config to serve on port 8080 (non-root)
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: frontend-nginx-config
+---
+# Custom nginx config to listen on 8080 (non-root cannot use port 80)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx-config
+  namespace: lab
+data:
+  default.conf: |
+    server {
+        listen 8080;
+        location / {
+            root /usr/share/nginx/html;
+            index index.html;
+        }
+    }
